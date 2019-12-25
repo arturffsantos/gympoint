@@ -53,7 +53,7 @@
   },
   "config": {
     "commitizen": {
-      "path": "./gympoint/backend/node_modules/cz-conventional-changelog"
+      "path": "./backend/node_modules/cz-conventional-changelog"
     }
   }
 }
