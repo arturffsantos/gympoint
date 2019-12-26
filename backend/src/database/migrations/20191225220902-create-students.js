@@ -20,7 +20,7 @@ module.exports = {
         type: Sequelize.INTEGER,
         allowNull: false,
       },
-      weight: Sequelize.INTEGER,
+      weight: Sequelize.FLOAT,
       height: Sequelize.INTEGER,
       created_at: {
         type: Sequelize.DATE,
