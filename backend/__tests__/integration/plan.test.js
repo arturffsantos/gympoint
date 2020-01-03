@@ -52,3 +52,35 @@ describe('Plan - create', () => {
     expect(response.status).toBe(400);
   });
 });
+
+describe('Plan - list', () => {
+  let token;
+
+  beforeAll(async () => {
+    await truncate();
+    const admin = await factory.create('User');
+
+    const response = await request(app)
+      .post('/sessions')
+      .send({
+        email: admin.email,
+        password: admin.password,
+      });
+
+    token = response.body.token;
+  });
+
+  it('should list all plans', async () => {
+    await Promise.all([
+      factory.create('Plan'),
+      factory.create('Plan'),
+      factory.create('Plan'),
+    ]);
+
+    const response = await request(app)
+      .get('/plans')
+      .set('Authorization', `bearer ${token}`);
+
+    expect(response.body.length).toBe(3);
+  });
+});
