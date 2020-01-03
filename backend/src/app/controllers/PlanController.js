@@ -42,6 +42,42 @@ class PlanController {
 
     return res.json({ id, title, duration, price });
   }
+
+  async update(req, res) {
+    const schema = Yup.object().shape({
+      title: Yup.string(),
+      duration: Yup.number()
+        .integer()
+        .positive(),
+      price: Yup.number().positive(),
+    });
+
+    if (!(await schema.isValid(req.body))) {
+      return res.status(400).json({ error: 'validation fails' });
+    }
+
+    const { title: newTitle } = req.body;
+
+    const plan = await Plan.findByPk(req.params.planId);
+
+    if (!plan) {
+      return res.status(404).json({ error: 'Plan not found' });
+    }
+
+    if (newTitle && newTitle !== plan.title) {
+      const planExists = await Plan.findOne({
+        where: { title: newTitle },
+      });
+
+      if (planExists) {
+        return res.status(400).json({ error: 'Plan already exists' });
+      }
+    }
+
+    const { id, title, duration, price } = await plan.update(req.body);
+
+    return res.json({ id, title, duration, price });
+  }
 }
 
 export default new PlanController();
