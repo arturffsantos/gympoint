@@ -33,18 +33,13 @@ describe('Plan - create', () => {
   });
 
   it('should not be able to register due to existing title', async () => {
-    const plan = await factory.attrs('Plan');
+    const plan = await factory.create('Plan');
 
-    let response = await request(app)
-      .post('/plans')
-      .set('Authorization', `bearer ${token}`)
-      .send(plan);
+    const planWithExistingTitle = await factory.attrs('Plan', {
+      title: plan.title,
+    });
 
-    expect(response.status).toBe(200);
-
-    const planWithExistingTitle = { ...response.body };
-
-    response = await request(app)
+    const response = await request(app)
       .post('/plans')
       .set('Authorization', `bearer ${token}`)
       .send(planWithExistingTitle);
@@ -161,15 +156,49 @@ describe('Plan - update', () => {
   });
 
   it('should not be able to update due to plan not found', async () => {
-    const plan = await factory.create('Plan');
-    const newPrice = plan.price * 1.1;
+    const plan = await factory.attrs('Plan', { id: 999 });
+
     const response = await request(app)
-      .put(`/plans/999`)
+      .put(`/plans/${plan.id}`)
       .set('Authorization', `bearer ${token}`)
       .send({
-        price: newPrice,
+        price: 200,
       });
 
     expect(response.status).toBe(404);
+  });
+});
+
+describe('Plan - delete', () => {
+  let token;
+
+  beforeAll(async () => {
+    await truncate();
+    const admin = await factory.create('User');
+
+    const response = await request(app)
+      .post('/sessions')
+      .send({
+        email: admin.email,
+        password: admin.password,
+      });
+
+    token = response.body.token;
+  });
+
+  it('should be able to delete', async () => {
+    const plan = await factory.create('Plan');
+
+    let response = await request(app)
+      .delete(`/plans/${plan.id}`)
+      .set('Authorization', `bearer ${token}`);
+
+    expect(response.status).toBe(200);
+
+    response = await request(app)
+      .get('/plans')
+      .set('Authorization', `bearer ${token}`);
+
+    expect(response.body.length).toBe(0);
   });
 });

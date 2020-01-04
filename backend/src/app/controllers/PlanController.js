@@ -78,6 +78,20 @@ class PlanController {
 
     return res.json({ id, title, duration, price });
   }
+
+  async delete(req, res) {
+    const plan = await Plan.findByPk(req.params.planId);
+
+    if (!plan) {
+      return res.status(400).json({
+        error: 'Plan not found',
+      });
+    }
+
+    await plan.destroy();
+
+    return res.json(plan);
+  }
 }
 
 export default new PlanController();
