@@ -19,7 +19,7 @@ factory.define('Student', Student, {
 });
 
 factory.define('Plan', Plan, {
-  title: () => faker.commerce.productAdjective(),
+  title: () => `${faker.commerce.productAdjective()} ${new Date().getTime()}`,
   duration: () => Math.trunc(faker.random.number({ min: 1, max: 12 })),
   price: () => Math.trunc(faker.random.number({ min: 10, max: 250 })),
 });
