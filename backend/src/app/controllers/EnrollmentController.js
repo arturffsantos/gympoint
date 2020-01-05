@@ -85,6 +85,20 @@ class EnrollmentController {
 
     return res.json(newEnrollment);
   }
+
+  async delete(req, res) {
+    const enrollment = await Enrollment.findByPk(req.params.id);
+
+    if (!enrollment) {
+      return res.status(400).json({
+        error: 'Enrollment not found',
+      });
+    }
+
+    await enrollment.destroy();
+
+    return res.json(enrollment);
+  }
 }
 
 export default new EnrollmentController();
