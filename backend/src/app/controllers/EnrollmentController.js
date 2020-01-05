@@ -74,16 +74,65 @@ class EnrollmentController {
         end_date,
         price: plan.price * plan.duration,
       });
-
-      return res.json(newEnrollment);
     } catch (e) {
       if (e instanceof ForeignKeyConstraintError) {
         // student not found in database
         return res.status(400).json({ error: 'Invalid student' });
       }
+
+      throw e;
     }
 
     return res.json(newEnrollment);
+  }
+
+  async update(req, res) {
+    const schema = Yup.object().shape({
+      student_id: Yup.number().required(),
+      plan_id: Yup.number().required(),
+      start_date: Yup.date().required(),
+    });
+
+    if (!(await schema.isValid(req.body))) {
+      return res.status(400).json({ error: 'validation fails' });
+    }
+
+    const enrollment = await Enrollment.findByPk(req.params.id);
+    if (!enrollment) {
+      return res.status(400).json({ error: 'Invalid enrollment' });
+    }
+
+    const { student_id, plan_id, start_date } = req.body;
+    const startEnrollment = startOfDay(parseISO(start_date));
+
+    const plan = await Plan.findByPk(plan_id);
+
+    if (!plan) {
+      return res.status(400).json({ error: 'Invalid plan' });
+    }
+
+    const end_date = startOfDay(addMonths(startEnrollment, plan.duration));
+
+    const updatedEnrollment = {
+      student_id,
+      plan_id,
+      start_date: startEnrollment,
+      end_date,
+      price: plan.price * plan.duration,
+    };
+
+    try {
+      await enrollment.update(updatedEnrollment);
+    } catch (e) {
+      if (e instanceof ForeignKeyConstraintError) {
+        // student not found in database
+        return res.status(400).json({ error: 'Invalid student' });
+      }
+
+      throw e;
+    }
+
+    return res.json(updatedEnrollment);
   }
 
   async delete(req, res) {
