@@ -4,6 +4,8 @@ import { Op, ForeignKeyConstraintError } from 'sequelize';
 import Registration from '../models/Registration';
 import Plan from '../models/Plan';
 import Student from '../models/Student';
+import Queue from '../../lib/Queue';
+import RegistrationMail from '../jobs/RegistrationMail';
 
 class RegistrationController {
   async index(req, res) {
@@ -64,23 +66,35 @@ class RegistrationController {
     }
     const end_date = startOfDay(addMonths(startRegistration, plan.duration));
 
-    let newRegistration;
-    try {
-      newRegistration = await Registration.create({
-        student_id,
-        plan_id,
-        start_date: startRegistration,
-        end_date,
-        price: plan.price * plan.duration,
-      });
-    } catch (e) {
-      if (e instanceof ForeignKeyConstraintError) {
-        // student not found in database
-        return res.status(400).json({ error: 'Invalid student' });
-      }
+    const student = await Student.findByPk(student_id, {
+      attributes: ['name', 'email'],
+    });
 
-      throw e;
+    if (!student) {
+      return res.status(400).json({ error: 'Invalid student' });
     }
+
+    const newRegistration = await Registration.create({
+      student_id,
+      plan_id,
+      start_date: startRegistration,
+      end_date,
+      price: plan.price * plan.duration,
+    });
+
+    await Queue.add(RegistrationMail.key, {
+      student: {
+        name: student.name,
+        email: student.email,
+      },
+      plan: {
+        title: plan.title,
+        price: plan.price,
+        duration: plan.duration,
+      },
+      start_date: startRegistration,
+      end_date,
+    });
 
     return res.json(newRegistration);
   }
