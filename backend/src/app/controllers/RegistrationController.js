@@ -1,15 +1,15 @@
 import * as Yup from 'yup';
 import { startOfDay, addMonths, parseISO } from 'date-fns';
 import { Op, ForeignKeyConstraintError } from 'sequelize';
-import Enrollment from '../models/Enrollment';
+import Registration from '../models/Registration';
 import Plan from '../models/Plan';
 import Student from '../models/Student';
 
-class EnrollmentController {
+class RegistrationController {
   async index(req, res) {
     const { page = 1 } = req.query;
 
-    const enrollments = await Enrollment.findAll({
+    const registrations = await Registration.findAll({
       order: [['end_date', 'DESC']],
       limit: 20,
       offset: (page - 1) * 20,
@@ -28,7 +28,7 @@ class EnrollmentController {
       ],
     });
 
-    return res.json(enrollments);
+    return res.json(registrations);
   }
 
   async store(req, res) {
@@ -43,19 +43,19 @@ class EnrollmentController {
     }
 
     const { student_id, plan_id, start_date } = req.body;
-    const startEnrollment = startOfDay(parseISO(start_date));
+    const startRegistration = startOfDay(parseISO(start_date));
 
-    const enrollmentExists = await Enrollment.findOne({
+    const registrationExists = await Registration.findOne({
       where: {
         student_id,
         canceled_at: null,
         end_date: {
-          [Op.gt]: startEnrollment,
+          [Op.gt]: startRegistration,
         },
       },
     });
 
-    if (enrollmentExists) {
+    if (registrationExists) {
       return res.status(400).json({ error: 'Student already enrolled' });
     }
 
@@ -63,14 +63,14 @@ class EnrollmentController {
     if (!plan) {
       return res.status(400).json({ error: 'Invalid plan' });
     }
-    const end_date = startOfDay(addMonths(startEnrollment, plan.duration));
+    const end_date = startOfDay(addMonths(startRegistration, plan.duration));
 
-    let newEnrollment;
+    let newRegistration;
     try {
-      newEnrollment = await Enrollment.create({
+      newRegistration = await Registration.create({
         student_id,
         plan_id,
-        start_date: startEnrollment,
+        start_date: startRegistration,
         end_date,
         price: plan.price * plan.duration,
       });
@@ -83,7 +83,7 @@ class EnrollmentController {
       throw e;
     }
 
-    return res.json(newEnrollment);
+    return res.json(newRegistration);
   }
 
   async update(req, res) {
@@ -97,13 +97,13 @@ class EnrollmentController {
       return res.status(400).json({ error: 'validation fails' });
     }
 
-    const enrollment = await Enrollment.findByPk(req.params.id);
-    if (!enrollment) {
-      return res.status(400).json({ error: 'Invalid enrollment' });
+    const registration = await Registration.findByPk(req.params.id);
+    if (!registration) {
+      return res.status(400).json({ error: 'Invalid registration' });
     }
 
     const { student_id, plan_id, start_date } = req.body;
-    const startEnrollment = startOfDay(parseISO(start_date));
+    const startRegistration = startOfDay(parseISO(start_date));
 
     const plan = await Plan.findByPk(plan_id);
 
@@ -111,18 +111,18 @@ class EnrollmentController {
       return res.status(400).json({ error: 'Invalid plan' });
     }
 
-    const end_date = startOfDay(addMonths(startEnrollment, plan.duration));
+    const end_date = startOfDay(addMonths(startRegistration, plan.duration));
 
-    const updatedEnrollment = {
+    const updatedRegistration = {
       student_id,
       plan_id,
-      start_date: startEnrollment,
+      start_date: startRegistration,
       end_date,
       price: plan.price * plan.duration,
     };
 
     try {
-      await enrollment.update(updatedEnrollment);
+      await registration.update(updatedRegistration);
     } catch (e) {
       if (e instanceof ForeignKeyConstraintError) {
         // student not found in database
@@ -132,22 +132,22 @@ class EnrollmentController {
       throw e;
     }
 
-    return res.json(updatedEnrollment);
+    return res.json(updatedRegistration);
   }
 
   async delete(req, res) {
-    const enrollment = await Enrollment.findByPk(req.params.id);
+    const registration = await Registration.findByPk(req.params.id);
 
-    if (!enrollment) {
+    if (!registration) {
       return res.status(400).json({
-        error: 'Enrollment not found',
+        error: 'Registration not found',
       });
     }
 
-    await enrollment.destroy();
+    await registration.destroy();
 
-    return res.json(enrollment);
+    return res.json(registration);
   }
 }
 
-export default new EnrollmentController();
+export default new RegistrationController();
