@@ -113,16 +113,15 @@ class RegistrationController {
 
     const end_date = startOfDay(addMonths(startRegistration, plan.duration));
 
-    const updatedRegistration = {
-      student_id,
-      plan_id,
-      start_date: startRegistration,
-      end_date,
-      price: plan.price * plan.duration,
-    };
-
+    let updatedRegistration;
     try {
-      await registration.update(updatedRegistration);
+      updatedRegistration = await registration.update({
+        student_id,
+        plan_id,
+        start_date: startRegistration,
+        end_date,
+        price: plan.price * plan.duration,
+      });
     } catch (e) {
       if (e instanceof ForeignKeyConstraintError) {
         // student not found in database
