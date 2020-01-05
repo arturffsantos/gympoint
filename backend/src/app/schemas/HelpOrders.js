@@ -22,4 +22,4 @@ const HelpOrdersSchema = new mongoose.Schema(
   }
 );
 
-export default mongoose.model('Notification', HelpOrdersSchema);
+export default mongoose.model('HelpOrdersSchema', HelpOrdersSchema);
