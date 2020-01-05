@@ -72,7 +72,7 @@ class EnrollmentController {
         plan_id,
         start_date: startEnrollment,
         end_date,
-        price: plan.price,
+        price: plan.price * plan.duration,
       });
 
       return res.json(newEnrollment);
