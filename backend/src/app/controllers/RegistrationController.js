@@ -13,7 +13,7 @@ class RegistrationController {
       order: [['end_date', 'DESC']],
       limit: 20,
       offset: (page - 1) * 20,
-      attributes: ['id', 'start_date', 'end_date', 'price'],
+      attributes: ['id', 'start_date', 'end_date', 'price', 'active'],
       include: [
         {
           model: Student,
@@ -48,14 +48,13 @@ class RegistrationController {
     const registrationExists = await Registration.findOne({
       where: {
         student_id,
-        canceled_at: null,
         end_date: {
           [Op.gt]: startRegistration,
         },
       },
     });
 
-    if (registrationExists) {
+    if (registrationExists && registrationExists.active) {
       return res.status(400).json({ error: 'Student already enrolled' });
     }
 
